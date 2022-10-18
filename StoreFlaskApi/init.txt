@@ -6,8 +6,18 @@ ctrl shift p
     select recent created .venv
     restart vscode
 
-create new file .py [ctrl alt N] to open python terminal with .venv eviroment
+ctrl + J to open python terminal with .venv eviroment
 in python terminal 
     pip install flask
 
 pip will install flask in to venv
+
+create app.py
+ctrl + J 
+    flask run
+
+// debug
+// ctrl shift d
+Run -> chose Flask ....  
+
+make sure terminal working folder is the same with file app.py
