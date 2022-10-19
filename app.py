@@ -2,7 +2,7 @@ from datetime import datetime
 import re
 
 from uuid import uuid4
-from flask import Flask, request
+from flask import Flask, request, escape
 from flask_smorest import abort
 
 from db.db import stores, items
@@ -17,11 +17,13 @@ def home():
 
 @app.route('/hello', methods=['POST'])
 def hello():
+    # get pass from body form
     name = request.form.get('name')
 
     if name:
-        print('Request for hello page received with name=%s' % name)
-
+        return ('Request for hello page received with name=%s' % escape(name))
+    
+    return "hello"
 
 @app.route("/hello/<name>")
 def hello_there(name):
@@ -53,6 +55,12 @@ def get_store():
 def create_store():
     # json equal to python dictionary
     rq_data = request.get_json()
+
+    if ("name" not in rq_data ):
+        abort(400,
+            message="Bad request 😥"
+        )
+
     store_id = uuid4().hex
     new_store = {"id": store_id,  **rq_data}
     stores[store_id] = new_store
@@ -80,6 +88,13 @@ def get_item_in_store(store_id):
 @app.post("/item")
 def create_item():
     item_data = request.get_json()
+    if ("store_id" not in item_data
+        or "name" not in item_data
+        or "price" not in item_data):
+        abort(400,
+            message="Bad request 😥"
+        )
+
     if item_data["store_id"] not in stores:
         abort(404, message="store not found")
 
@@ -102,3 +117,24 @@ def get_item(item_id):
         return {"message": "item not found"}, 404
     except:
         return {"message": "sys error"}, 500
+
+@app.put("/item/<item_id>")
+def update_item(item_id):
+    item_data = request.get_json()
+    if ("name" not in item_data
+        or "price" not in item_data):
+        abort(400,
+            message="Bad request 😥"
+        )
+
+    item = items[item_id]
+    item |= item_data
+    return item_data, 202
+
+@app.delete("/item/<item_id>")
+def delete_item(item_id):
+    if items.get(item_id) != None:
+        del items[item_id]
+        return {"message":"Item deleted!"}
+    
+    return {"message":"Item not found!"}
