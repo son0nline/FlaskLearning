@@ -50,4 +50,25 @@ pip install -r requirements.txt
 -----docker---------
 docker build -t flask_api .
 
+# run normal
 docker run -p 5005:5000 -d flask_api:latest
+
+
+# ------------
+# --hot reload code to container-----
+# Mount volume to container 
+# Linux
+docker run -p 5005:5000 -w /app -v "$(pwd):/app" -d flask_api:latest
+
+    $(pwd) linux command (print working directory) 
+
+# Windows
+docker run -p 5005:5000 -w /app -v "/c/Documents/yourproject:/app" -d flask-smorest-api
+
+-d : Run in detached mode 
+-p 5000:5000 : Create a port mapping.
+-w /app : Sets the container's present working directory where the command will run from.
+-v "$(pwd):/app" : Bind mount (link) the host's present directory to the container's /app directory. 
+    Note: Docker requires absolute paths for binding mounts,
+         so in this example we use pwd for printing the absolute path of the working directory instead of typing it manually.
+flask-smorest-api : the image to use.
