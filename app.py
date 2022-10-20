@@ -79,6 +79,10 @@ def search_store(store_id):
 
 @app.get("/store/<string:store_id>/items")
 def get_item_in_store(store_id):
+    store = stores.get(store_id)
+    if store == None:
+        return {"message":"store not found"},204
+
     store_items = [items[id]
                 for id in items if items[id]["store_id"] == store_id]
     return { "store_id": store_id,
