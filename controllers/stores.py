@@ -4,7 +4,7 @@ from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 
 from db.sqlcontext import db
-from db.schemas import BaseRsp, PlainItemSchema, PlainStoreSchema, StoreSchema
+from db.schemas import BaseRsp, ItemSchema, PlainItemSchema, PlainStoreSchema, StoreSchema
 
 from sqlalchemy.exc import SQLAlchemyError
 from models import StoreModel
@@ -61,8 +61,16 @@ class StoreItemsInfo(MethodView):
     
     #@blp.response(200, StoreSchema)
     @blp.response(200, PlainItemSchema(many=True)) # đây sẽ mô tả dữ liệu trả về
-    def get(self, store_id):        
+    def get(self, store_id):
         
+        if StoreModel.query.filter(StoreModel.id == store_id).first() == None:
+            return {"message":"store not found!"},404
+
+        rsItems = StoreModel.query.filter(StoreModel.id == store_id)
+        
+        for row in rsItems.all():
+            print(type(row))
+
         # store = db.session.execute('SELECT * FROM stores where id=:val', {'val': store_id})
         rs_query = db.session.execute('SELECT id,name,price FROM items where store_id=:val', {'val': store_id})
         # không [select * ] bởi vì PlainItemSchema không có mô tả trường store_id
