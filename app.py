@@ -1,15 +1,23 @@
 import os
-from flask import Flask
+from datetime import timedelta
+
+from flask import Flask, jsonify
 from flask_smorest import Api
+from flask_jwt_extended import JWTManager
+
+from flask_migrate import Migrate
+
 import urllib.request
 
 from db.sqlcontext import db
+from db.blocklist import BLOCKLIST
 import models
 
 from dotenv import load_dotenv
 # python-dotenv read file .env
 load_dotenv()
 
+from controllers.user import blp as UserBlueprint
 from controllers.items import blp as ItemBlueprint
 from controllers.stores import blp as StoreBlueprint
 from controllers.tag import blp as TagBlueprint
@@ -40,16 +48,87 @@ def create_app(db_url=None):
 
     db.init_app(app)
 
-    api = Api(app)
-    api.register_blueprint(ItemBlueprint)
-    api.register_blueprint(StoreBlueprint)
-    api.register_blueprint(TagBlueprint)
+    migrate = Migrate(app,db)
 
+    api = Api(app)
+
+
+
+
+    app.config["JWT_SECRET_KEY"] = 'c19f9578-6c49-4861-9078-d10771855abf'
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=2)
+    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
+    # https://flask-jwt-extended.readthedocs.io/en/stable/refreshing_tokens/
+    jwt = JWTManager(app)
+
+    @jwt.token_in_blocklist_loader
+    def check_if_token_in_blocklist(jwt_header, jwt_payload):
+        return jwt_payload["jti"] in BLOCKLIST
+
+
+    @jwt.revoked_token_loader
+    def revoked_token_callback(jwt_header, jwt_payload):
+        return (
+            jsonify(
+                {"description": "The token has been revoked.", "error": "token_revoked"}
+            ),
+            401,
+        )
+
+    @jwt.needs_fresh_token_loader
+    def token_not_fresh_callback(jwt_header, jwt_payload):
+        return (
+            jsonify(
+                {
+                    "description": "The token is not fresh.",
+                    "error": "fresh_token_required",
+                }
+            ),
+            401,
+        )
+
+    @jwt.additional_claims_loader
+    def add_claims_to_jwt(identity):
+        if identity == 1:
+            return {"is_admin": True}
+        return {"is_admin": False}
+
+    @jwt.expired_token_loader
+    def expired_token_callback(jwt_header, jwt_payload):
+        return (
+            jsonify({"message": "The token has expired.", "error": "token_expired"}),
+            401,
+        )
+
+    @jwt.invalid_token_loader
+    def invalid_token_callback(error):
+        return (
+            jsonify(
+                {"message": "Signature verification failed.", "error": "invalid_token"}
+            ),
+            401,
+        )
+
+    @jwt.unauthorized_loader
+    def missing_token_callback(error):
+        return (
+            jsonify(
+                {
+                    "description": "Request does not contain an access token.",
+                    "error": "authorization_required",
+                }
+            ),
+            401,
+        )
+
+    # using sqlalchemy to create table
+    # can remove when use flask-migrate
     with app.app_context():
         db.create_all()
 
-    @app.route("/")
-    def home():
-        return f"Hello, Flask world! {__name__}\n"
+    api.register_blueprint(UserBlueprint)
+    api.register_blueprint(ItemBlueprint)
+    api.register_blueprint(StoreBlueprint)
+    api.register_blueprint(TagBlueprint)
     
     return app

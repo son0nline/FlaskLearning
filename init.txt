@@ -72,3 +72,15 @@ docker run -p 5005:5000 -w /app -v "/c/Documents/yourproject:/app" -d flask-smor
     Note: Docker requires absolute paths for binding mounts,
          so in this example we use pwd for printing the absolute path of the working directory instead of typing it manually.
 flask-smorest-api : the image to use.
+
+
+## Migratetion
+# pip install flask-migrate
+# config in app.py
+# flask db init
+# flask db migrate # create first version of database
+
+# update db when changed model
+# flask db migrate 
+# flask db upgrade 
+

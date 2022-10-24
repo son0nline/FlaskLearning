@@ -3,4 +3,7 @@ flask-smorest
 python-dotenv
 sqlalchemy
 flask-sqlalchemy
+flask-migrate==3.1.0
 pyodbc
+passlib
+flask-jwt-extended

@@ -12,10 +12,12 @@ from sqlalchemy.sql import text
 
 blp = Blueprint("stores", __name__, description="Operations on stores")
 
+from flask_jwt_extended import jwt_required, get_jwt
 
 @blp.route("/store")
 class Store(MethodView):
 
+    @jwt_required()
     @blp.arguments(StoreSchema)
     @blp.response(200, StoreSchema)
     def post(self, store_data):
@@ -33,6 +35,7 @@ class Store(MethodView):
 
         return store
 
+    @jwt_required()
     @blp.response(200, PlainStoreSchema(many=True))
     def get(self):
         #return {"stores": list(stores.values())}
@@ -47,10 +50,14 @@ class StoreInfo(MethodView):
         store = StoreModel.query.get_or_404(store_id)
         return store
 
-
+    @jwt_required()
     @blp.response(200, BaseRsp)
     @blp.response(404, BaseRsp)
     def delete(self, store_id):
+        jwt = get_jwt()
+        if not jwt.get("is_admin"):
+            abort(401, message="Admin privilege required.")
+
         store = StoreModel.query.get_or_404(store_id)
         db.session.delete(store)
         db.session.commit()
