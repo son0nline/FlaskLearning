@@ -1,5 +1,6 @@
 import os
 from datetime import timedelta
+from tkinter.messagebox import NO
 
 from flask import Flask, jsonify
 from flask_smorest import Api
@@ -23,9 +24,12 @@ from controllers.stores import blp as StoreBlueprint
 from controllers.tag import blp as TagBlueprint
 
 def getDbConnectString(db_url=None)->str:
-    params = urllib.parse.quote_plus(os.environ.get('DBCONNECT'))
-    # need pip install pyodbc
-    sqlServerConnectString = "mssql+pyodbc:///?odbc_connect=%s" % params
+    try:
+        params = urllib.parse.quote_plus(os.environ.get('DBCONNECT'))
+        # need pip install pyodbc
+        sqlServerConnectString = "mssql+pyodbc:///?odbc_connect=%s" % params
+    except:
+        sqlServerConnectString = None
     
     sqliteConnectString = "sqlite:///data.db"
 
